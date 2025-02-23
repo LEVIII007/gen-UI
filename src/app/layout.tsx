@@ -2,24 +2,33 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import Navbar from "@/components/navbar";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "GenUI - AI-Powered UI Code Generation",
-  description: "Upload screenshots and generate structured prompts for AI code generation.",
-  keywords: ["AI", "UI Generation", "Code Generation", "Cursor AI", "Windsurf AI"],
+  description:
+    "Upload screenshots and generate structured prompts for AI code generation.",
+  keywords: [
+    "AI",
+    "UI Generation",
+    "Code Generation",
+    "Cursor AI",
+    "Windsurf AI",
+  ],
 };
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth dark">
       <body className={inter.className}>
-        {children}
+        <Navbar />
+        <main className="flex-grow w-full">{children}</main>
         <Toaster />
       </body>
     </html>
