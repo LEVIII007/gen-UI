@@ -1,50 +1,64 @@
 import NextAuth, { type DefaultSession } from "next-auth";
-import GitHub from 'next-auth/providers/github'
 
 import authConfig from "./auth.config";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
+import { JWT } from "next-auth/jwt";
 import { getUserById } from "@/utils/getUser";
 
-// Define custom types
-type Role = "USER" | "ADMIN";
+declare module "next-auth/jwt" {
 
-declare module "next-auth" {
-  interface Session extends DefaultSession {
-    user: {
-      id: string;
-      role: Role;
-    } & DefaultSession["user"]
+  interface JWT {
+    /** OpenID ID Token */
+    role: "USER" | "ADMIN";
   }
-
-  interface User {
-    role: Role;
+}
+declare module "next-auth" {
+  /**
+   * Returned by `auth`, `useSession`, `getSession` and received as a prop on the `SessionProvider` React Context
+   */
+  interface Session {
+    user: {
+      /** The user's postal address. */
+      role: "USER" | "ADMIN";
+      /**
+       * By default, TypeScript merges new interface properties and overwrites existing ones.
+       * In this case, the default session user properties will be overwritten,
+       * with the new ones defined above. To keep the default session user properties,
+       * you need to add them back into the newly declared interface.
+       */
+    } & DefaultSession["user"];
   }
 }
 
-export const {
-  handlers: { GET, POST },
-  auth,
-  signIn,
-  signOut,
-} = NextAuth({
-  providers: [GitHub],
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",
   },
   callbacks: {
-    async session({ session, token }) {
-      if (session.user) {
-        if (token.sub) {
-          session.user.id = token.sub;
-          const user = await getUserById(token.sub);
-          if (user) {
-            session.user.role = user.role as Role;
-          }
-        }
+    async jwt({ token }) {
+      if (!token.sub) {
+        return token;
       }
+      const existingUser = await getUserById(token.sub);
+      if (!existingUser) {
+        return token;
+      }
+      token.role = existingUser.role;
+
+      return token;
+    },
+    async session({ session, token }) {
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
+      }
+      if (token.role && session.user) {
+        session.user.role = token.role;
+      }
+
       return session;
     },
   },

@@ -14,15 +14,13 @@ import { FileUpload } from "@/components/create/dropzone";
 import { toast } from "sonner";
 import { generateText } from "@/lib/generate";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import image from 'next/image'
-import { CopyIcon } from '@radix-ui/react-icons'
+
 
 type AnalysisType = "web" | "mobile";
 
 interface GenerateResponse {
   error?: string;
   analysis: string;
-  pageStructure: string | null;
 }
 
 export default function RightHero() {
@@ -34,12 +32,6 @@ export default function RightHero() {
   const [pageStructure, setPageStructure] = useState<string | null>(null);
   const [promptsGenerated, setPromptsGenerated] = useState(0);
   const [analysisType, setAnalysisType] = useState<AnalysisType>("web");
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [generatedContent, setGeneratedContent] = useState<GenerateResponse>({
-    analysis: null,
-    pageStructure: null
-  })
 
   const handleUpload = (uploadedFile: File) => {
     setFile(uploadedFile);
@@ -86,31 +78,42 @@ export default function RightHero() {
   };
 
   const handleGenerateStructure = async () => {
+    if (!analysis) return;
+    setIsGeneratingStructure(true);
+
     try {
-      setLoading(true)
-      setError(null)
-      // TODO: Implement API call
-      const response = await fetch('/api/generate-structure')
-      const data = await response.json()
-      
-      setGeneratedContent({
-        analysis: data.analysis || null,
-        pageStructure: data.pageStructure || null
-      })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      const formData = new FormData();
+      if (!file) return;
+      formData.append("file", file);
+      formData.append("options", "structure");
+
+      const response = await generateText(formData) as GenerateResponse;
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      if (response.analysis) {
+        setPageStructure(response.analysis);
+        setPromptsGenerated(prev => prev + 1);
+        toast.success("Page structure generated!");
+      }
+    } catch (error) {
+      toast.error("Failed to generate page structure");
+      console.error("Error:", error);
     } finally {
-      setLoading(false)
+      setIsGeneratingStructure(false);
     }
-  }
+  };
 
   const copyToClipboard = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text)
+      await navigator.clipboard.writeText(text);
+      toast.success("Copied to clipboard!");
     } catch (err) {
-      console.error('Failed to copy:', err)
+      toast.error("Failed to copy text");
     }
-  }
+  };
 
   return (
     <div className="w-full space-y-12 relative">
@@ -119,16 +122,16 @@ export default function RightHero() {
           {/* Gradient backgrounds */}
           <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#233997] to-[#2fbcf8] -z-10" />
           <div className="absolute inset-[1px] rounded-lg bg-gradient-to-r from-[#0A192F] to-[#212222]/80 backdrop-blur-md -z-10" />
-          
+
           <div className="relative z-0 flex-grow">
             {/* Upload section */}
             <div className="flex flex-col items-center justify-center h-72 md:h-96 space-y-6 relative">
               <div className="bg-[#212222] p-6 rounded-lg w-full h-full flex flex-col items-center justify-center border border-gray-700/50">
                 {previewUrl ? (
                   <div className="relative w-full h-full">
-                    <img 
-                      src={previewUrl} 
-                      alt="Uploaded preview" 
+                    <img
+                      src={previewUrl}
+                      alt="Uploaded preview"
                       className="w-full h-full object-contain rounded-md"
                     />
                     {isLoading && (
@@ -171,7 +174,7 @@ export default function RightHero() {
               <p className="text-sm font-medium mb-2 text-left text-white">
                 Choose analysis focus:
               </p>
-              <Select 
+              <Select
                 defaultValue={analysisType}
                 onValueChange={(value) => setAnalysisType(value as AnalysisType)}
               >
@@ -182,7 +185,7 @@ export default function RightHero() {
                         {analysisType === 'web' ? 'Web applications' : 'Mobile applications'}
                       </span>
                       <span className="text-xs text-white/50">
-                        {analysisType === 'web' 
+                        {analysisType === 'web'
                           ? 'Analyze SaaS, UI & Figma designs.'
                           : 'Analyze mobile UI designs.'}
                       </span>
@@ -209,67 +212,74 @@ export default function RightHero() {
 
           {/* Generated Content Area */}
           <ScrollArea className="flex-grow mt-8 pr-4 -mr-4">
-            {error && (
-              <div className="bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-3 rounded">
-                {error}
-              </div>
-            )}
-
-            {generatedContent.analysis && (
+            {analysis ? (
               <div className="space-y-6">
                 {/* Analysis Output */}
                 <div className="bg-[#1a1a1a] rounded-lg p-6 text-left relative group">
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="text-white font-semibold">Generated Prompt:</h3>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => copyToClipboard(generatedContent.analysis!)}
+                    <button
+                      onClick={() => copyToClipboard(analysis)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <CopyIcon className="h-4 w-4" />
-                    </Button>
+                      <Copy className="h-4 w-4 text-white/70 hover:text-white" />
+                    </button>
                   </div>
                   <ScrollArea className="h-[200px] pr-4 -mr-4">
-                    <p className="text-white/90 whitespace-pre-wrap">{generatedContent.analysis}</p>
+                    <p className="text-white/90 whitespace-pre-wrap">{analysis}</p>
                   </ScrollArea>
                 </div>
 
                 {/* Page Structure Generation Option */}
-                {!generatedContent.pageStructure && (
+                {!pageStructure && (
                   <Button
                     onClick={handleGenerateStructure}
-                    disabled={loading}
+                    disabled={isGeneratingStructure}
                     className="w-full py-4 bg-[#1a1a1a] hover:bg-[#1a1a1a]/80 text-white"
                   >
                     <Code2 className="mr-2 h-4 w-4" />
-                    {loading ? 'Generating Structure...' : 'Generate Page Structure'}
+                    {isGeneratingStructure ? 'Generating Structure...' : 'Generate Page Structure'}
                   </Button>
                 )}
 
                 {/* Page Structure Output */}
-                {generatedContent.pageStructure && (
+                {pageStructure && (
                   <div className="bg-[#1a1a1a] rounded-lg p-6 text-left relative group">
                     <div className="flex justify-between items-start mb-3">
                       <h3 className="text-white font-semibold">Page Structure:</h3>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => copyToClipboard(generatedContent.pageStructure!)}
+                      <button
+                        onClick={() => copyToClipboard(pageStructure)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <CopyIcon className="h-4 w-4" />
-                      </Button>
+                        <Copy className="h-4 w-4 text-white/70 hover:text-white" />
+                      </button>
                     </div>
                     <ScrollArea className="h-[200px] pr-4 -mr-4">
-                      <p className="text-white/90 whitespace-pre-wrap">{generatedContent.pageStructure}</p>
+                      <p className="text-white/90 whitespace-pre-wrap">{pageStructure}</p>
                     </ScrollArea>
                   </div>
                 )}
               </div>
-            )}
-
-            {loading && (
-              <div className="flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+            ) : (
+              /* Generate button */
+              <div className="relative">
+                <Button
+                  onClick={handleGenerate}
+                  disabled={!file || isLoading}
+                  className="w-full mt-8 text-xl py-6 bg-black hover:bg-black/90 text-white rounded-xl shadow-[0_0_15px_rgba(35,57,151,0.3)] transition-all duration-300 relative"
+                >
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#233997] via-[#9333ea] to-[#2fbcf8] blur-sm -z-10" />
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#233997] via-[#9333ea] to-[#2fbcf8] -z-10" />
+                  <div className="absolute inset-[1px] rounded-[10px] bg-black -z-10" />
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    {isLoading ? 'Generating...' : 'Generate prompt'}
+                    <Sparkles className="w-5 h-5 ml-1" style={{
+                      background: 'linear-gradient(to right, #233997, #9333ea, #2fbcf8)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }} />
+                  </span>
+                </Button>
               </div>
             )}
           </ScrollArea>
