@@ -2,7 +2,7 @@ import NextAuth, { type DefaultSession } from "next-auth";
 
 import authConfig from "./auth.config";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 import { JWT } from "next-auth/jwt";
 import { getUserById } from "@/utils/getUser";
