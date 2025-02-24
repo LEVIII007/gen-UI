@@ -15,12 +15,12 @@ import { toast } from "sonner";
 import { generateText } from "@/lib/generate";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-
 type AnalysisType = "web" | "mobile";
 
 interface GenerateResponse {
-  error?: string;
-  analysis: string;
+  success: boolean;
+  message: string;
+  analysis?: string;
 }
 
 export default function RightHero() {
@@ -60,14 +60,16 @@ export default function RightHero() {
       formData.append("file", file);
       formData.append("options", "basic");
 
-      const response = await generateText(formData) as GenerateResponse;
+      const response = (await generateText(formData)) as GenerateResponse;
 
-      if (response.error) {
-        throw new Error(response.error);
+      if (response.success === false) {
+        throw new Error(response.message);
       }
-
+      if (!response.analysis) {
+        throw new Error("Failed to generate analysis");
+      }
       setAnalysis(response.analysis);
-      setPromptsGenerated(prev => prev + 1);
+      setPromptsGenerated((prev) => prev + 1);
       toast.success("Analysis completed!");
     } catch (error) {
       toast.error("Failed to generate analysis");
@@ -87,15 +89,15 @@ export default function RightHero() {
       formData.append("file", file);
       formData.append("options", "structure");
 
-      const response = await generateText(formData) as GenerateResponse;
+      const response = (await generateText(formData)) as GenerateResponse;
 
-      if (response.error) {
-        throw new Error(response.error);
+      if (response.success === false) {
+        throw new Error(response.message);
       }
 
       if (response.analysis) {
         setPageStructure(response.analysis);
-        setPromptsGenerated(prev => prev + 1);
+        setPromptsGenerated((prev) => prev + 1);
         toast.success("Page structure generated!");
       }
     } catch (error) {
@@ -154,7 +156,17 @@ export default function RightHero() {
                       }}
                       className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 transition-colors"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                       </svg>
@@ -176,18 +188,22 @@ export default function RightHero() {
               </p>
               <Select
                 defaultValue={analysisType}
-                onValueChange={(value) => setAnalysisType(value as AnalysisType)}
+                onValueChange={(value) =>
+                  setAnalysisType(value as AnalysisType)
+                }
               >
                 <SelectTrigger className="flex items-center justify-between rounded-md border py-2 text-sm ring-offset-background bg-[#212222] border-gray-700/50 text-white h-[64px] px-4 focus:ring-0">
                   <SelectValue>
                     <div className="flex flex-col items-start">
                       <span className="font-semibold text-white">
-                        {analysisType === 'web' ? 'Web applications' : 'Mobile applications'}
+                        {analysisType === "web"
+                          ? "Web applications"
+                          : "Mobile applications"}
                       </span>
                       <span className="text-xs text-white/50">
-                        {analysisType === 'web'
-                          ? 'Analyze SaaS, UI & Figma designs.'
-                          : 'Analyze mobile UI designs.'}
+                        {analysisType === "web"
+                          ? "Analyze SaaS, UI & Figma designs."
+                          : "Analyze mobile UI designs."}
                       </span>
                     </div>
                   </SelectValue>
@@ -196,13 +212,17 @@ export default function RightHero() {
                   <SelectItem value="web">
                     <div className="flex flex-col">
                       <span className="font-semibold">Web applications</span>
-                      <span className="text-xs opacity-50">Analyze SaaS, UI & Figma designs.</span>
+                      <span className="text-xs opacity-50">
+                        Analyze SaaS, UI & Figma designs.
+                      </span>
                     </div>
                   </SelectItem>
                   <SelectItem value="mobile">
                     <div className="flex flex-col">
                       <span className="font-semibold">Mobile applications</span>
-                      <span className="text-xs opacity-50">Analyze mobile UI designs.</span>
+                      <span className="text-xs opacity-50">
+                        Analyze mobile UI designs.
+                      </span>
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -217,7 +237,9 @@ export default function RightHero() {
                 {/* Analysis Output */}
                 <div className="bg-[#1a1a1a] rounded-lg p-6 text-left relative group">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-white font-semibold">Generated Prompt:</h3>
+                    <h3 className="text-white font-semibold">
+                      Generated Prompt:
+                    </h3>
                     <button
                       onClick={() => copyToClipboard(analysis)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity"
@@ -226,7 +248,9 @@ export default function RightHero() {
                     </button>
                   </div>
                   <ScrollArea className="h-[200px] pr-4 -mr-4">
-                    <p className="text-white/90 whitespace-pre-wrap">{analysis}</p>
+                    <p className="text-white/90 whitespace-pre-wrap">
+                      {analysis}
+                    </p>
                   </ScrollArea>
                 </div>
 
@@ -238,7 +262,9 @@ export default function RightHero() {
                     className="w-full py-4 bg-[#1a1a1a] hover:bg-[#1a1a1a]/80 text-white"
                   >
                     <Code2 className="mr-2 h-4 w-4" />
-                    {isGeneratingStructure ? 'Generating Structure...' : 'Generate Page Structure'}
+                    {isGeneratingStructure
+                      ? "Generating Structure..."
+                      : "Generate Page Structure"}
                   </Button>
                 )}
 
@@ -246,7 +272,9 @@ export default function RightHero() {
                 {pageStructure && (
                   <div className="bg-[#1a1a1a] rounded-lg p-6 text-left relative group">
                     <div className="flex justify-between items-start mb-3">
-                      <h3 className="text-white font-semibold">Page Structure:</h3>
+                      <h3 className="text-white font-semibold">
+                        Page Structure:
+                      </h3>
                       <button
                         onClick={() => copyToClipboard(pageStructure)}
                         className="opacity-0 group-hover:opacity-100 transition-opacity"
@@ -255,7 +283,9 @@ export default function RightHero() {
                       </button>
                     </div>
                     <ScrollArea className="h-[200px] pr-4 -mr-4">
-                      <p className="text-white/90 whitespace-pre-wrap">{pageStructure}</p>
+                      <p className="text-white/90 whitespace-pre-wrap">
+                        {pageStructure}
+                      </p>
                     </ScrollArea>
                   </div>
                 )}
@@ -272,12 +302,16 @@ export default function RightHero() {
                   <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#233997] via-[#9333ea] to-[#2fbcf8] -z-10" />
                   <div className="absolute inset-[1px] rounded-[10px] bg-black -z-10" />
                   <span className="relative z-10 flex items-center justify-center gap-2">
-                    {isLoading ? 'Generating...' : 'Generate prompt'}
-                    <Sparkles className="w-5 h-5 ml-1" style={{
-                      background: 'linear-gradient(to right, #233997, #9333ea, #2fbcf8)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent'
-                    }} />
+                    {isLoading ? "Generating..." : "Generate prompt"}
+                    <Sparkles
+                      className="w-5 h-5 ml-1"
+                      style={{
+                        background:
+                          "linear-gradient(to right, #233997, #9333ea, #2fbcf8)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
+                    />
                   </span>
                 </Button>
               </div>
@@ -291,7 +325,7 @@ export default function RightHero() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-white/50">
-            Found bugs that needs squashing? Report bugs here:{' '}
+            Found bugs that needs squashing? Report bugs here:{" "}
             <a
               href="mailto:info@copycoder.ai?subject=Bug%20report"
               className="text-white/70 hover:text-white transition-colors duration-200"

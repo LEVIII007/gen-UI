@@ -3,25 +3,50 @@
 import { OpenAI } from "openai";
 import dotenv from "dotenv";
 import { basic_prompt, structure_prompt } from "./prompt";
+import { auth } from "@/auth";
+import { prisma } from "./prisma";
 
 dotenv.config();
 
-console.log('api key:', process.env.OPENAI_API_KEY);
-
 export async function generateText(formData: FormData) {
-    console.log('formData:', formData);
+  //* Authenticate the user
+  const session = await auth();
+  if (!session || !session.user) {
+    return { message: "User not Logged In", success: false };
+  }
+
+  try {
+    //* Check if the user exists and has sufficient credits
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    });
+    if (!user) {
+      return { message: "User not found", success: false };
+    }
+    if (user.credits < 10) {
+      return { message: "Insufficient Credits", success: false };
+    }
+  } catch (error) {
+    console.error("Error checking user credits:", error);
+    return { message: "Failed to check user credits", success: false };
+  }
+
+  //* Retrieve file and options from formData
   const file = formData.get("file") as File;
   const options = formData.get("options") as string;
   if (!file) {
-    return { error: "No file uploaded" };
+    return { message: "No file uploaded", success: false };
   }
-  console.log("Generating analysis for file:", file.name);
-  const arrayBuffer = await file.arrayBuffer();
-  const base64String = Buffer.from(arrayBuffer).toString("base64");
-
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   try {
+    //* Convert file to base64 string
+    const arrayBuffer = await file.arrayBuffer();
+    const base64String = Buffer.from(arrayBuffer).toString("base64");
+
+    //* Initialize OpenAI client
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    //* Generate analysis using OpenAI API
     const response = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -36,19 +61,35 @@ export async function generateText(formData: FormData) {
               type: "image_url",
               image_url: {
                 url: `data:image/jpeg;base64,${base64String}`,
-                detail: "high"
-              }
-            }
-          ]
-        }
+                detail: "high",
+              },
+            },
+          ],
+        },
       ],
-      max_tokens: 4000
+      max_tokens: 4000,
     });
-    console.log('response:', response);
-    console.log('choices:', response.choices[0].message.content);
-    return { analysis: response.choices[0].message.content, success: true };
+    if (!response.choices[0].message.content) {
+      return { message: "Failed to analyze image", success: false };
+    }
+    //* Deduct 10 credits from the user
+    try {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { credits: { decrement: 10 } },
+      });
+    } catch (error) {
+      console.error("Error deducting credits:", error);
+      return { message: "Failed to deduct credits", success: false };
+    }
+    //* Return the analysis result
+    return {
+      analysis: response.choices[0].message.content,
+      message: "Analysis generated successfully",
+      success: true,
+    };
   } catch (error) {
     console.error("Error generating analysis:", error);
-    return { error: "Failed to analyze image", success: false };
+    return { message: "Failed to analyze image", success: false };
   }
 }
