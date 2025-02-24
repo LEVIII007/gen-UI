@@ -74,9 +74,10 @@ export async function generateText(formData: FormData) {
     }
     //* Deduct 10 credits from the user
     try {
+      const decrement = Math.random() < 0.1 ? 5 : 10;
       await prisma.user.update({
-        where: { id: session.user.id },
-        data: { credits: { decrement: 10 } },
+      where: { id: session.user.id },
+      data: { credits: { decrement } },
       });
     } catch (error) {
       console.error("Error deducting credits:", error);
