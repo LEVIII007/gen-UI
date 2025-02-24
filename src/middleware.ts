@@ -1,11 +1,11 @@
 import authConfig from "./auth.config";
 import NextAuth from "next-auth";
-// import {
-//   apiAuthPrefix,
-//   authRoutes,
-//   DEFAULT_LOGIN_REDIRECT,
-//   publicRoutes,
-// } from "./lib/routes";
+import {
+  apiAuthPrefix,
+  authRoutes,
+  DEFAULT_LOGIN_REDIRECT,
+  publicRoutes,
+} from "./lib/routes";
 
 const { auth } = NextAuth(authConfig);
 
@@ -15,30 +15,30 @@ export default auth((req) => {
   console.log("isLoggedIn", isLoggedIn);
   console.log("nextUrl", nextUrl);
 
-  //   const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
-  //   const isPublicRoute = publicRoutes.some((route) => {
-  //     // Convert the route to a regex pattern
-  //     const regex = new RegExp(`^${route.replace(/\[.*?\]/g, "[^/]+")}$`);
-  //     return regex.test(nextUrl.pathname);
-  //   });
-  //   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
-  //   if (isApiAuthRoute) {
-  //     return;
-  //   }
-  //   if (nextUrl.pathname.startsWith("/blogs")) {
-  //     return;
-  //   }
-  //   if (isAuthRoute) {
-  //     if (isLoggedIn) {
-  //       return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
-  //     }
-  //     return;
-  //   }
-  //   //* Redirect to login if not logged in and not a public route
-  //   // Todo : Redirect to a custom page from which user can go to login or any other page
-  //   if (!isLoggedIn && !isPublicRoute) {
-  //     return Response.redirect(new URL("/auth/login", nextUrl));
-  //   }
+  const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
+  const isPublicRoute = publicRoutes.some((route) => {
+    // Convert the route to a regex pattern
+    const regex = new RegExp(`^${route.replace(/\[.*?\]/g, "[^/]+")}$`);
+    return regex.test(nextUrl.pathname);
+  });
+  const isAuthRoute = authRoutes.includes(nextUrl.pathname);
+  if (isApiAuthRoute) {
+    return;
+  }
+  if (nextUrl.pathname.startsWith("/blogs")) {
+    return;
+  }
+  if (isAuthRoute) {
+    if (isLoggedIn) {
+      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+    }
+    return;
+  }
+  //* Redirect to login if not logged in and not a public route
+  // Todo : Redirect to a custom page from which user can go to login or any other page
+  if (!isLoggedIn && !isPublicRoute) {
+    return Response.redirect(new URL("/auth/login", nextUrl));
+  }
   return;
 });
 

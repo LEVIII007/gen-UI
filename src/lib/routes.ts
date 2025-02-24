@@ -1,0 +1,36 @@
+/**
+ * An array of public route paths for the application.
+ * These routes are accessible without authentication.
+ *
+ * @constant
+ *
+ * @default ["/", "/about","/auth/logout"]
+ */
+export const publicRoutes = ["/", "/about", "/auth/logout"]; //! Temproary
+
+/**
+ * An array of authentication route paths.
+ *
+ * This array contains the paths for the login and register routes
+ * used in the authentication process.
+ */
+export const authRoutes = [
+  "/auth/login",
+  // "/auth/register",
+  // "/auth/error",
+  // "/auth/verify-email",
+  // "/auth/reset",
+];
+
+/**
+ * The prefix for API authentication routes.
+ *
+ * This prefix is used to namespace all authentication-related API endpoints.
+ */
+export const apiAuthPrefix = "/api/auth";
+
+/**
+ * The default path to which users are redirected after a successful login.
+ * This is typically the home page or dashboard of the application.
+ */
+export const DEFAULT_LOGIN_REDIRECT = "/";
