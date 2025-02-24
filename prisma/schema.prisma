@@ -30,6 +30,7 @@ model User {
 
   role    Role     @default(USER)
   prompts Prompt[]
+  credits Float    @default(30)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
