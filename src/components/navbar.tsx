@@ -1,38 +1,35 @@
-import React from "react";
+import Link from 'next/link'
+import Image from 'next/image'
+import { Button } from '@/components/ui/button'
 
-const Navbar = () => {
+export function Navbar() {
   return (
-    <nav className="sticky top-0 z-50 bg-black/70 backdrop-blur-md">
-      <header className="h-16 border-b border-gray-800">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
-          <div className="flex-1"></div>
-          <div className="flex items-center justify-center space-x-3">
-            <img
-              alt="CopyCoder Logo"
-              fetchPriority="high"
-              width="36"
-              height="36"
-              decoding="async"
-              className="w-9 h-9"
-              src="https://copycoder.ai/_next/image?url=%2Fcopycoder-logo-new.png&w=96&q=75"
+    <nav className="w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 max-w-screen-2xl items-center">
+        <div className="mr-4 flex">
+          <Link href="/" className="mr-6 flex items-center space-x-2">
+            <Image 
+              src="/logo.png" 
+              alt="GenUI Logo" 
+              width={32} 
+              height={32}
+              className="h-8 w-8"
             />
-            <span className="text-xl font-styrene-a font-black text-white">
-              CopyCoder
-            </span>
-          </div>
-          <div className="flex-1 flex justify-end">
-            <a href="/pricing">
-              <div className="bg-gradient-to-r from-[#233997] to-[#2fbcf8] rounded-md p-[1px]">
-                <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 px-4 py-2 bg-black hover:bg-black/90 text-white h-full w-full">
-                  Upgrade
-                </button>
-              </div>
-            </a>
-          </div>
+            <span className="font-bold">GenUI</span>
+          </Link>
         </div>
-      </header>
+        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          <nav className="flex items-center space-x-6">
+            <Link href="/create" className="hover:text-foreground/80">
+              Create
+            </Link>
+            <Link href="/dashboard" className="hover:text-foreground/80">
+              Dashboard
+            </Link>
+          </nav>
+          <Button variant="outline">Sign In</Button>
+        </div>
+      </div>
     </nav>
-  );
-};
-
-export default Navbar;
+  )
+}
